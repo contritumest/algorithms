@@ -11,7 +11,6 @@ import (
 )
 
 func clearConsole() {
-	// Определяем команду в зависимости от ОС
 	var cmdName string
 	if runtime.GOOS == "windows" {
 		cmdName = "cls"
@@ -19,9 +18,8 @@ func clearConsole() {
 		cmdName = "clear"
 	}
 
-	// Создаём команду и запускаем
 	cmd := exec.Command(cmdName)
-	cmd.Stdout = os.Stdout // Важно: передаём стандартный вывод в тот же поток, иначе ничего не отобразится
+	cmd.Stdout = os.Stdout
 	cmd.Run()
 }
 
@@ -32,6 +30,10 @@ type PriorityQueue struct {
 }
 
 func (pq *PriorityQueue) Push(inf string, prior int) {
+	if prior < 1 {
+		fmt.Println("Неверный приоритет")
+		return
+	}
 	newNode := &Node{Inf: inf, Prior: prior}
 	if pq.head == nil {
 		pq.head = newNode
@@ -128,6 +130,47 @@ func (pq *PriorityQueue) Delete(name string) bool {
 	return false
 }
 
+func (pq *PriorityQueue) SwapPrior(name string, newPrior int) bool {
+	returnFlag := false
+	current := pq.head
+	for current != nil || returnFlag == false {
+		if current.Inf == name {
+			returnFlag = true
+			currentCheck := pq.head
+			currentSwap := current
+			currentSwap.Prior = newPrior
+
+			if current == pq.head {
+				pq.head = current.Next
+			} else {
+				prev := pq.head
+				for prev.Next != current {
+					prev = prev.Next
+				}
+				prev.Next = current.Next
+			}
+
+			current = pq.head
+			for currentCheck != nil && current.Prior <= newPrior {
+				current = current.Next
+			}
+			if current == pq.head {
+				currentSwap.Next = pq.head
+				pq.head = currentSwap
+			} else {
+				prev := pq.head
+				for prev.Next != current {
+					prev = prev.Next
+				}
+				prev.Next = currentSwap
+				currentSwap.Next = current
+			}
+		}
+		current = current.Next
+	}
+	return returnFlag
+}
+
 var reader = bufio.NewReader(os.Stdin)
 
 func readLine(prompt string) string {
@@ -155,6 +198,7 @@ func menuPriorityQueue() {
 		fmt.Println("3 - Просмотр")
 		fmt.Println("4 - Поиск")
 		fmt.Println("5 - Удаление")
+		fmt.Println("6 - Изменить приоритет")
 		fmt.Println("0 - Назад")
 
 		choice := readInt("Выбор: ")
@@ -196,6 +240,17 @@ func menuPriorityQueue() {
 			name := readLine("Введите имя: ")
 			if pq.Delete(name) {
 				fmt.Println("Удалено")
+			} else {
+				fmt.Println("Элемент не найден")
+			}
+
+		case 6:
+			clearConsole()
+			name := readLine("Введите имя: ")
+			newPrior := readInt("Введите новый приоритет: ")
+			flag := pq.SwapPrior(name, newPrior)
+			if flag {
+				fmt.Println("Приоритет изменён")
 			} else {
 				fmt.Println("Элемент не найден")
 			}
