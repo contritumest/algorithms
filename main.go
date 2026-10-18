@@ -10,9 +10,7 @@ import (
 	"time"
 )
 
-const (
-	P = 0.4
-)
+var P = 0.5
 
 type Graph struct {
 	Names []string // метки вершин
@@ -41,7 +39,7 @@ func randomGraph(n int) *Graph {
 	}
 	for i := 0; i < n; i++ {
 		for j := i + 1; j < n; j++ {
-			if rand.Float64() < 0.4 {
+			if rand.Float64() < P {
 				g.M[i][j] = 1
 				g.M[j][i] = 1
 			}
@@ -125,6 +123,9 @@ func identifyMatrix(g *Graph, u, v int) *Graph {
 			res.M[k][a] = 1
 		}
 	}
+	if g.M[u][v] == 1 {
+		res.M[k][k] = 1
+	}
 	res.Names[k] = "z"
 	return res
 }
@@ -133,6 +134,7 @@ func contractMatrix(g *Graph, u, v int) (*Graph, error) {
 	if g.M[u][v] != 1 {
 		return nil, fmt.Errorf("вершины %s и %s не смежны - ребра нет", g.Names[u], g.Names[v])
 	}
+	g.M[u][v] = 0
 	return identifyMatrix(g, u, v), nil
 }
 
@@ -147,15 +149,9 @@ func splitMatrix(g *Graph, v int) *Graph {
 	}
 	res.Names[v] = g.Names[v] + "'"
 	res.Names[n] = g.Names[v] + "''"
-	cnt := 0
 	for w := 0; w < n; w++ {
-		if g.M[v][w] == 1 {
-			if cnt%2 == 1 {
-				res.M[v][w], res.M[w][v] = 0, 0
-				res.M[n][w], res.M[w][n] = 1, 1
-			}
-			cnt++
-		}
+		res.M[n][w] = g.M[v][w]
+		res.M[w][n] = g.M[w][v]
 	}
 	res.M[v][n], res.M[n][v] = 1, 1
 	return res
@@ -376,6 +372,7 @@ func main() {
 		fmt.Println("5. Унарные операции (списки): отождествление / стягивание / расщепление")
 		fmt.Println("6. Объединение, пересечение, кольцевая сумма")
 		fmt.Println("7. Декартово произведение")
+		fmt.Println("8. Поменять вероятность")
 		fmt.Println("0. Выход")
 		var choice int
 		fmt.Printf("Ваш выбор: ")
@@ -385,7 +382,7 @@ func main() {
 			fmt.Println("Выход.")
 			return
 		}
-		if choice != 1 && !requireGraphs(g1, g2) {
+		if choice != 1 && choice != 8 && !requireGraphs(g1, g2) {
 			continue
 		}
 
@@ -530,6 +527,10 @@ func main() {
 			showGraphs(g1, g2)
 			fmt.Println("\nG1 x G2 (вершина (i,k) = (zi,vk)):")
 			printMatrix(cartesianProduct(g1, g2))
+
+		case 8:
+			fmt.Println("\nВведите вероятность (0.01 - 1): ")
+			fmt.Scan(&P)
 		}
 	}
 }
