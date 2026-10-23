@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -177,6 +178,35 @@ func (g Graph) DFSIterative(start int) []int {
 	return order
 }
 
+func (g Graph) DFSIterativeList(start int) []int {
+	visited := make([]bool, g.N)
+	order := make([]int, 0, g.N)
+	list := g.AdjacencyList()
+
+	for v := 0; v < g.N; v++ {
+		if !visited[v] {
+			stack := []int{v}
+			for len(stack) > 0 {
+				last := len(stack) - 1
+				v := stack[last]
+				stack = stack[:last]
+				if visited[v] {
+					continue
+				}
+				visited[v] = true
+				order = append(order, v)
+				slices.Reverse(list[v])
+				for _, to := range list[v] {
+					if !visited[to] {
+						stack = append(stack, to)
+					}
+				}
+			}
+		}
+	}
+	return order
+}
+
 func printOrder(title string, order []int) {
 	fmt.Println("\n" + title)
 	fmt.Print("Порядок посещения вершин: ")
@@ -230,8 +260,9 @@ func main() {
 		fmt.Println("5. Нерекурсивный обход")
 		fmt.Println("6. Вывести списки смежности")
 		fmt.Println("7. Указать вероятность ребра")
+		fmt.Println("8. Нерекурсивный обход списка")
 		fmt.Println("0. Выход")
-		choice := readInt(in, "Выберите пункт меню: ", 0, 7)
+		choice := readInt(in, "Выберите пункт меню: ", 0, 8)
 
 		switch choice {
 		case 0:
@@ -251,26 +282,45 @@ func main() {
 				continue
 			}
 			start := readStartVertex(in, g.N)
+			startTime := time.Now()
 			printOrder("Рекурсивный обход в глубину по матрице смежности:", g.DFSRecursive(start))
+			elapsed := time.Since(startTime)
+			fmt.Printf("Время выполнения: %v\n", elapsed)
 		case 4:
 			if g.N == 0 {
 				fmt.Println("Сначала создайте граф (пункт 1).")
 				continue
 			}
 			start := readStartVertex(in, g.N)
+			startTime := time.Now()
 			printOrder("Обход в глубину по спискам смежности:", g.DFSAdjacencyList(start))
+			elapsed := time.Since(startTime)
+			fmt.Printf("Время выполнения: %v\n", elapsed)
 		case 5:
 			if g.N == 0 {
 				fmt.Println("Сначала создайте граф (пункт 1).")
 				continue
 			}
 			start := readStartVertex(in, g.N)
+			startTime := time.Now()
 			printOrder("Нерекурсивный обход в глубину с помощью стека:", g.DFSIterative(start))
+			elapsed := time.Since(startTime)
+			fmt.Printf("Время выполнения: %v\n", elapsed)
 		case 6:
 			g.PrintAdjacencyList()
 		case 7:
 			probability = readProbability(in)
 			fmt.Printf("Установлена вероятность %.2f%%. Она будет использована при следующей генерации графа.\n", probability)
+		case 8:
+			if g.N == 0 {
+				fmt.Println("Сначала создайте граф (пункт 1).")
+				continue
+			}
+			start := readStartVertex(in, g.N)
+			startTime := time.Now()
+			printOrder("Нерекурсивный обход в глубину с помощью стека:", g.DFSIterativeList(start))
+			elapsed := time.Since(startTime)
+			fmt.Printf("Время выполнения: %v\n", elapsed)
 		}
 	}
 }
