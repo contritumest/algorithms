@@ -268,6 +268,47 @@ func (g Graph) BFSAdjacencyList(start int, order *[]int) {
 	}
 }
 
+func (g Graph) BFSAdjacencyListQ(start int) []int {
+	list := g.AdjacencyList()
+
+	visited := make([]bool, g.N)
+	order := make([]int, 0, g.N)
+
+	for startVertex := 0; startVertex < g.N; startVertex++ {
+		v := start
+		if startVertex > 0 {
+			v = startVertex - 1
+			if v >= start {
+				v++
+			}
+		}
+
+		if visited[v] {
+			continue
+		}
+
+		var queue LinkedQueue
+
+		queue.Push(v)
+		visited[v] = true
+
+		for !queue.IsEmpty() {
+			current, _ := queue.Pop()
+
+			order = append(order, current)
+
+			for _, to := range list[current] {
+				if !visited[to] {
+					queue.Push(to)
+					visited[to] = true
+				}
+			}
+		}
+	}
+
+	return order
+}
+
 func printOrder(title string, order []int) {
 	fmt.Println("\n" + title)
 	fmt.Print("Порядок посещения вершин: ")
@@ -365,12 +406,13 @@ func main() {
 		fmt.Println("6. Вывести списки смежности")
 		fmt.Println("7. BFS по спискам смежности")
 		fmt.Println("8. Указать вероятность появления ребра")
+		fmt.Println("9. BFS по спискам смежности (очередь)")
 		fmt.Println("0. Выход")
 
-		choice, err := readInt(in, "Выберите пункт меню: ", 0, 8)
+		choice, err := readInt(in, "Выберите пункт меню: ", 0, 9)
 		for err != nil {
 			fmt.Println("Ошибка:", err)
-			choice, err = readInt(in, "Выберите пункт меню: ", 0, 8)
+			choice, err = readInt(in, "Выберите пункт меню: ", 0, 9)
 		}
 
 		switch choice {
@@ -379,10 +421,10 @@ func main() {
 			return
 
 		case 1:
-			n, err := readInt(in, "Количество вершин (1-100): ", 1, 100)
+			n, err := readInt(in, "Количество вершин (1-100): ", 1, 100000)
 			for err != nil {
 				fmt.Println("Ошибка:", err)
-				n, err = readInt(in, "Количество вершин (1-100): ", 1, 100)
+				n, err = readInt(in, "Количество вершин (1-100): ", 1, 100000)
 			}
 
 			g = NewGraph(n, probability)
@@ -450,7 +492,7 @@ func main() {
 				start, err = readInt(in, "Введите начальную вершину: ", 1, g.N)
 			}
 
-			compareTime(g, start, true)
+			compareTime(g, start, false)
 
 		case 6:
 			g.PrintAdjacencyList()
@@ -486,6 +528,25 @@ func main() {
 				"Установлена вероятность %.2f%%. Она будет использована при следующей генерации графа.\n",
 				probability,
 			)
+		case 9:
+			if g.N == 0 {
+				fmt.Println("Сначала создайте граф (пункт 1).")
+				continue
+			}
+
+			start, err := readInt(in, "Введите начальную вершину: ", 1, g.N)
+			for err != nil {
+				fmt.Println("Ошибка:", err)
+				start, err = readInt(in, "Введите начальную вершину: ", 1, g.N)
+			}
+			start--
+
+			startTime := time.Now()
+			order := g.BFSAdjacencyListQ(start)
+			elapsed := time.Since(startTime)
+
+			printOrder("Обход в ширину по спискам смежности:", order)
+			fmt.Printf("Время выполнения: %v\n", elapsed)
 		}
 	}
 }
